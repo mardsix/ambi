@@ -28,7 +28,7 @@ AMBI_NAMESPACE_BEGIN
         template<typename C>
         C cast(boost::python::list l)
         {
-            using CastType = typename std::remove_pointer<C>::type;
+            using CastType = typename std::remove_pointer_t<C>;
 
             long len = boost::python::len(l);
             C array = new CastType[len];
@@ -38,6 +38,12 @@ AMBI_NAMESPACE_BEGIN
             }
 
             return array;
+        }
+
+        template<typename C>
+        C cast(std::vector<std::remove_pointer_t<C>>& vec)
+        {
+            return vec.data();
         }
 
         // Need to be specialized for types that cannot be statically cast
@@ -54,8 +60,11 @@ AMBI_NAMESPACE_BEGIN
                 l[i] = c[i];
             }
 
-            delete c;
+            delete [] c;
         }
+
+        template<typename C>
+        void consume(C c, std::vector<std::remove_pointer_t<C>> vec) {}
 
         template <std::size_t I, typename Fn, typename T>
         decltype(auto) forward_visit(Fn f, T value)
