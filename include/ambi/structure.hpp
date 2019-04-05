@@ -53,6 +53,10 @@ AMBI_NAMESPACE_BEGIN
                 return wrapped_struct.get();
             }
 
+        private:
+            template<std::size_t I>
+            auto& get_member() const;
+
             inline std::any& take_ownership(
                 const std::size_t key, const std::any& object
             )
@@ -117,14 +121,20 @@ AMBI_NAMESPACE_BEGIN
     }
 
     template<typename T>
+    template<std::size_t I>
+    auto& Structure<T>::get_member() const
+    {
+        constexpr auto accessors = hana::accessors<T>();
+        auto member = hana::second(accessors[hana::size_c<I>]);
+        return member(*wrapped_struct);
+    }
+
+    template<typename T>
     template<std::size_t I, typename R,
              std::enable_if_t<std::is_fundamental_v<R>, R>>
     void Structure<T>::setattr(const R& value)
     {
-        constexpr auto accessors = hana::accessors<T>();
-        auto get_member = hana::second(accessors[hana::size_c<I>]);
-        auto& member = get_member(*wrapped_struct);
-
+        auto& member = get_member<I>();
         member = value;
     }
 
@@ -135,9 +145,7 @@ AMBI_NAMESPACE_BEGIN
         const std::vector<std::remove_pointer_t<R>>& value
     )
     {
-        constexpr auto accessors = hana::accessors<T>();
-        auto get_member = hana::second(accessors[hana::size_c<I>]);
-        auto& member = get_member(*wrapped_struct);
+        auto& member = get_member<I>();
 
         using RType = std::vector<std::remove_pointer_t<R>>;
 
